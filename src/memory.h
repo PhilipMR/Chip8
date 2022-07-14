@@ -23,12 +23,9 @@ namespace ch8
                     std::array<std::byte, MEMORY_INTERP-3> padding;
                 } mem_interp_data;
             };
-            union { 
-                std::array<std::byte, MEMORY_PRORAM>  mem_program_8;
-                std::array<uint16_t, MEMORY_PRORAM/2> mem_program;
-            };
-            std::array<uint16_t,  MEMORY_STACK/2>  mem_stack;
-            std::array<std::byte, MEMORY_DISPLAY>  mem_display;
+            std::array<std::byte, MEMORY_PRORAM>  mem_program;
+            std::array<std::byte, MEMORY_STACK>   mem_stack;
+            std::array<std::byte, MEMORY_DISPLAY> mem_display;
         };
     };
 }

@@ -8,7 +8,7 @@ namespace ch8
 {
     struct RegisterUnit
     {
-        std::bitset<12> I;
+        uint16_t I;
         union {
             std::array<uint8_t, 16> V;
             struct {

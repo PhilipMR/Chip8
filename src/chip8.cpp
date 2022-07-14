@@ -30,20 +30,29 @@ namespace ch8
 
     Chip8Emulator::Chip8Emulator()
     {
+        m_memory.memory = {};
+        m_registers.I = 0;
+        for (auto& v : m_registers.V) {
+            v = 0;
+        }
     }
 
     Chip8Emulator::Chip8Emulator(const GameROM* rom)
     {
-        m_memory.memory = {};
         LoadROM(rom);
     }
 
     void 
     Chip8Emulator::LoadROM(const GameROM* rom)
     {
+        m_memory.memory = {};
+        m_registers.I = 0;
+        for (auto& v : m_registers.V) {
+            v = 0;
+        }
         auto rom_data = rom->GetData();
-        std::copy(rom_data.begin(), rom_data.end(), m_memory.mem_program_8.begin());
-        m_memory.mem_interp_data.PC = MEMORY_INTERP;
+        std::copy(rom_data.begin(), rom_data.end(), m_memory.mem_program.begin());
+        m_memory.mem_interp_data.PC = (uint16_t)(&m_memory.mem_program[0] - &m_memory.memory[0]);
         m_memory.mem_interp_data.stack_level = 0;
     }
 
@@ -51,6 +60,7 @@ namespace ch8
     Chip8Emulator::Run()
     {
         bool is_running = true;
+        bool ready_for_next_instr = false;
         while (is_running)
         {
             SDL_Event event;
@@ -59,13 +69,22 @@ namespace ch8
                 if (event.type == SDL_QUIT) {
                     is_running = false;
                 }
+                if (event.type == SDL_KEYDOWN) {
+                    if (event.key.keysym.sym == SDL_KeyCode::SDLK_RIGHT) {
+                        ready_for_next_instr = true;
+                    }
+                }
             }
 
-            uint16_t opcode = m_memory.mem_program[m_memory.mem_interp_data.PC - 512];
-            opcode = ((opcode & 0x00FF) << 8) | ((opcode & 0xFF00) >> 8); // Switch endianness
-            ProcessOpCode(opcode, &m_display, &m_registers, &m_memory);
+            if (ready_for_next_instr) {
+                uint16_t opcode = *(uint16_t*)(&m_memory.memory[m_memory.mem_interp_data.PC]);
+                opcode = ((opcode & 0x00FF) << 8) | ((opcode & 0xFF00) >> 8); // Switch endianness
+                ProcessOpCode(opcode, &m_display, &m_registers, &m_memory);
+                ready_for_next_instr = false;
+            }
 
-            //m_display.DrawDebugInfo(&m_registers);
+            m_display.Clear();
+            m_display.DrawDebugInfo(&m_registers, &m_memory);
             m_display.Present();
         }
     }

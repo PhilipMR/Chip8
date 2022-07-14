@@ -1,13 +1,12 @@
 #pragma once 
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
-struct SDL_Window;
-struct SDL_Renderer;
-namespace ch8 
+namespace ch8
 {
     struct RegisterUnit;
-
+    union MemoryUnit;
     class DisplayUnit
     {
     public:
@@ -15,6 +14,7 @@ namespace ch8
         static constexpr int RESOLUTION_Y = 32;
 
     private:
+        TTF_Font*     m_debugFont;
         SDL_Window*   m_window;
         SDL_Renderer* m_renderer;
         struct Pixel {
@@ -24,8 +24,10 @@ namespace ch8
 
     public:
         DisplayUnit();
+        ~DisplayUnit();
         void Clear();
-        void DrawDebugInfo(const RegisterUnit* registers);
+        void DrawSprite(uint8_t X, uint8_t Y, uint8_t N);
+        void DrawDebugInfo(const RegisterUnit* registers, const MemoryUnit* memory);
         void Present();
     };
 }
