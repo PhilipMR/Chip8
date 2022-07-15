@@ -205,7 +205,7 @@ namespace ch8
                 uint8_t Y = (opcode & 0x00F0) >> 4;
                 uint8_t N = (opcode & 0x000F) >> 0;
                 assert(N != 0); // Only support CHIP-8 instruction set
-                display->DrawSprite(X, Y, N, registers, memory);
+                display->DrawSprite(registers->V[X], registers->V[Y], N, registers, memory);
                 memory->mem_interp_data.PC += 2;
             } break; // Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels. Each row of 8 pixels is read as bit-coded starting from memory location I; I value does not change after the execution of this instruction. As described above, VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, and to 0 if that does not happen
             case 0xE: {

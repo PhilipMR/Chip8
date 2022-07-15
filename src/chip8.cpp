@@ -75,6 +75,8 @@ namespace ch8
                 }
             }
 
+            //SDL_Delay(8);
+            ready_for_next_instr = true;
             if (ready_for_next_instr) {
                 uint16_t opcode = *(uint16_t*)(&m_memory.memory[m_memory.mem_interp_data.PC]);
                 opcode = ((opcode & 0x00FF) << 8) | ((opcode & 0xFF00) >> 8); // Switch endianness

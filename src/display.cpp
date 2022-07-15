@@ -72,7 +72,7 @@ namespace ch8
                 if (was_on && !is_on) {
                     collision = true;
                 }
-                m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on = is_on;
+                m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on ^= is_on;
             }
         }
         registers->V[0xF] = collision ? 1 : 0;
