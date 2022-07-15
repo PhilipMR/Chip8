@@ -19,15 +19,15 @@ namespace ch8
         SDL_Renderer* m_renderer;
         struct Pixel {
             SDL_Rect rect;
-            Uint8    r, g, b;
-        } m_pixels[RESOLUTION_Y][RESOLUTION_X];
+            Uint8    is_on;
+        } m_pixels[RESOLUTION_Y*RESOLUTION_X];
 
+        void DrawDebugInfo(const RegisterUnit* registers, const MemoryUnit* memory);
     public:
         DisplayUnit();
         ~DisplayUnit();
         void Clear();
-        void DrawSprite(uint8_t X, uint8_t Y, uint8_t N);
-        void DrawDebugInfo(const RegisterUnit* registers, const MemoryUnit* memory);
-        void Present();
+        void DrawSprite(uint8_t X, uint8_t Y, uint8_t N, RegisterUnit* registers, const MemoryUnit* memory);
+        void Present(const RegisterUnit* registers, const MemoryUnit* memory);
     };
 }

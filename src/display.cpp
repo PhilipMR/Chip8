@@ -34,11 +34,12 @@ namespace ch8
             for (int x = 0; x < RESOLUTION_X; ++x) {
                 Pixel pixel = {0};
                 pixel.rect = { x * PIXELSIZE_X, y * PIXELSIZE_Y, PIXELSIZE_X, PIXELSIZE_Y };
-                m_pixels[y][x] = pixel;
+                pixel.is_on = false;
+                m_pixels[y*RESOLUTION_X+x] = pixel;
             }
         }
 
-        m_debugFont = TTF_OpenFont("C:\\Users\\phili\\Desktop\\Chip8\\OpenSans.ttf", 12);
+        m_debugFont = TTF_OpenFont("D:\\Projects\\Chip-8\\OpenSans.ttf", 12);
         TTF_SetFontHinting(m_debugFont, TTF_HINTING_LIGHT_SUBPIXEL);
         if (m_debugFont == nullptr) {
             throw std::runtime_error("Could not open the debug font");
@@ -53,13 +54,28 @@ namespace ch8
     void 
     DisplayUnit::Clear() 
     {
-        SDL_RenderClear(m_renderer);
+        for (auto& p : m_pixels) {
+            p.is_on = false;
+        }
     }
 
     void
-    DisplayUnit::DrawSprite(uint8_t X, uint8_t Y, uint8_t N)
+    DisplayUnit::DrawSprite(uint8_t X, uint8_t Y, uint8_t N, RegisterUnit* registers, const MemoryUnit* memory)
     {
-
+        uint16_t I = registers->I;
+        bool collision = false;
+        for (int y = 0; y < N; ++y) {
+            uint8_t row_bits = (uint8_t)memory->memory[I+y];
+            for (int x = 0; x < 8; ++x) {
+                uint8_t is_on = ((row_bits & (1 << (7-x))) > 0) ? 1 : 0;
+                uint8_t was_on = m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on;
+                if (was_on && !is_on) {
+                    collision = true;
+                }
+                m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on = is_on;
+            }
+        }
+        registers->V[0xF] = collision ? 1 : 0;
     }
 
     void 
@@ -82,6 +98,8 @@ namespace ch8
         };
 
 
+        int x_offset = WINDOW_WIDTH - 100;
+
         int col1_width = 0;
         for (int i = 0; i < 16; ++i) {
             std::stringstream ss;
@@ -99,11 +117,11 @@ namespace ch8
         int font_height = TTF_FontHeight(m_debugFont);
         int pen_y = 0;
 
-        SDL_Rect registers_rect{ 0, 0, col1_width+col2_width+2*padding_x+50, font_height*19};
+        SDL_Rect registers_rect{ x_offset, 0, col1_width+col2_width+2*padding_x+50, font_height*19};
         SDL_SetRenderDrawColor(m_renderer, 255, 0, 0, 0);
         SDL_RenderDrawRect(m_renderer, &registers_rect);
 
-        SDL_Rect interp_rect{ 0, 0, col1_width+col2_width+2*padding_x+50, font_height*2};
+        SDL_Rect interp_rect{ x_offset, 0, col1_width+col2_width+2*padding_x+50, font_height*2};
         SDL_SetRenderDrawColor(m_renderer, 255, 255, 0, 0);
         SDL_RenderDrawRect(m_renderer, &interp_rect);
         SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 0);
@@ -112,9 +130,9 @@ namespace ch8
             int w;
             const char* text = "PC";
             TTF_SizeText(m_debugFont, text, &w, nullptr);
-            DrawText(text, 0, pen_y, w, font_height);
+            DrawText(text, x_offset, pen_y, w, font_height);
 
-            int pen_x = col1_width + padding_x;
+            int pen_x = x_offset + col1_width + padding_x;
             DrawText("=", pen_x, pen_y, col2_width, font_height);
             pen_x += col2_width + padding_x;
 
@@ -130,9 +148,9 @@ namespace ch8
             std::stringstream ss;
             ss << "OP";
             TTF_SizeText(m_debugFont, ss.str().c_str(), &w, nullptr);
-            DrawText(ss.str().c_str(), 0, pen_y, w, font_height);
+            DrawText(ss.str().c_str(), x_offset, pen_y, w, font_height);
 
-            int pen_x = col1_width + padding_x;
+            int pen_x = x_offset + col1_width + padding_x;
             DrawText("=", pen_x, pen_y, col2_width, font_height);
             pen_x += col2_width + padding_x;
 
@@ -150,9 +168,9 @@ namespace ch8
             std::stringstream ss;
             ss << " I";
             TTF_SizeText(m_debugFont, ss.str().c_str(), &w, nullptr);
-            DrawText(ss.str().c_str(), 0, pen_y, w, font_height);
+            DrawText(ss.str().c_str(), x_offset, pen_y, w, font_height);
 
-            int pen_x = col1_width + padding_x;
+            int pen_x = x_offset + col1_width + padding_x;
             DrawText("=", pen_x, pen_y, col2_width, font_height);
             pen_x += col2_width + padding_x;
 
@@ -168,9 +186,9 @@ namespace ch8
             std::stringstream ss;
             ss << "V" << GetHexDigit(i);
             TTF_SizeText(m_debugFont, ss.str().c_str(), &w, nullptr);
-            DrawText(ss.str().c_str(), 0, pen_y, w, font_height);
+            DrawText(ss.str().c_str(), x_offset, pen_y, w, font_height);
 
-            int pen_x = col1_width + padding_x;
+            int pen_x = x_offset + col1_width + padding_x;
             DrawText("=", pen_x, pen_y, col2_width, font_height);
             pen_x += col2_width + padding_x;
 
@@ -184,15 +202,20 @@ namespace ch8
     }
 
     void 
-    DisplayUnit::Present()
+    DisplayUnit::Present(const RegisterUnit* registers, const MemoryUnit* memory)
     {
-//        for (int y = 0; y < RESOLUTION_Y; ++y) {
-//            for (int x = 0; x < RESOLUTION_X; ++x) {
-//                const Pixel& pixel = m_pixels[y][x];
-//                SDL_SetRenderDrawColor(m_renderer, pixel.r, pixel.g, pixel.b, 255);
-//                SDL_RenderFillRect(m_renderer, &pixel.rect);
-//            }
-//        }
+        SDL_RenderClear(m_renderer);
+        for (const auto& pixel : m_pixels) {
+            const SDL_Color color = { 
+                Uint8(pixel.is_on * 255), 
+                Uint8(pixel.is_on * 255), 
+                Uint8(pixel.is_on * 255), 
+                255 
+            };
+            SDL_SetRenderDrawColor(m_renderer, color.r, color.g, color.b, 255);
+            SDL_RenderFillRect(m_renderer, &pixel.rect);
+        }
+        DrawDebugInfo(registers, memory);
         SDL_RenderPresent(m_renderer);
     }
 }

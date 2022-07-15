@@ -45,7 +45,6 @@ namespace ch8
     void 
     Chip8Emulator::LoadROM(const GameROM* rom)
     {
-        m_memory.memory = {};
         m_registers.I = 0;
         for (auto& v : m_registers.V) {
             v = 0;
@@ -53,7 +52,7 @@ namespace ch8
         auto rom_data = rom->GetData();
         std::copy(rom_data.begin(), rom_data.end(), m_memory.mem_program.begin());
         m_memory.mem_interp_data.PC = (uint16_t)(&m_memory.mem_program[0] - &m_memory.memory[0]);
-        m_memory.mem_interp_data.stack_level = 0;
+        m_memory.mem_interp_data.SP = 0;
     }
 
     void 
@@ -83,9 +82,19 @@ namespace ch8
                 ready_for_next_instr = false;
             }
 
-            m_display.Clear();
-            m_display.DrawDebugInfo(&m_registers, &m_memory);
-            m_display.Present();
+            static Uint64 last_timer_update = 0;
+            Uint64 time = SDL_GetTicks64();
+            if ((time-last_timer_update) >= (1000.0/60.0)) {
+                if (m_memory.mem_interp_data.delay_timer > 0) {
+                    m_memory.mem_interp_data.delay_timer--;
+                }
+                if (m_memory.mem_interp_data.sound_timer > 0) {
+                    m_memory.mem_interp_data.sound_timer--;
+                }
+                last_timer_update = time;
+            }
+
+            m_display.Present(&m_registers, &m_memory);
         }
     }
 }

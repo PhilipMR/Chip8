@@ -14,7 +14,7 @@ main(int argc, char *argv[])
         return -1;
     }
 
-    ch8::GameROM rom("C:\\Users\\phili\\Desktop\\Chip8\\roms\\1dcell.ch8");
+    ch8::GameROM rom("D:\\Projects\\Chip-8\\roms\\1dcell.ch8");
     ch8::Chip8Emulator emulator(&rom);
     emulator.Run();
 
