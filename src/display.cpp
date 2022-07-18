@@ -10,7 +10,7 @@ namespace ch8
 {
     constexpr char WINDOW_TITLE[] = "Chip-8 Emulator";
     constexpr int  WINDOW_WIDTH   = 640;
-    constexpr int  WINDOW_HEIGHT  = 480;
+    constexpr int  WINDOW_HEIGHT  = 320;
 
     constexpr int PIXELSIZE_X  = WINDOW_WIDTH  / DisplayUnit::RESOLUTION_X;
     constexpr int PIXELSIZE_Y  = WINDOW_HEIGHT / DisplayUnit::RESOLUTION_Y;
@@ -25,6 +25,7 @@ namespace ch8
             throw std::runtime_error("Could not create the SDL window");
         }
 
+        //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
         m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
         if (m_renderer == nullptr) {
             throw std::runtime_error("Could not create the SDL Renderer");
@@ -57,6 +58,7 @@ namespace ch8
         for (auto& p : m_pixels) {
             p.is_on = false;
         }
+        m_dirty = true;
     }
 
     void
@@ -67,15 +69,16 @@ namespace ch8
         for (int y = 0; y < N; ++y) {
             uint8_t row_bits = (uint8_t)memory->memory[I+y];
             for (int x = 0; x < 8; ++x) {
-                uint8_t is_on = ((row_bits & (1 << (7-x))) > 0) ? 1 : 0;
-                uint8_t was_on = m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on;
-                if (was_on && !is_on) {
+                if (!(row_bits & (0b10000000 >> x))) continue;
+                auto& pixel = m_pixels[((Y+y)%RESOLUTION_Y)*RESOLUTION_X+((X+x)%RESOLUTION_X)];
+                if (pixel.is_on) {
                     collision = true;
                 }
-                m_pixels[(Y+y)*RESOLUTION_X+(X+x)].is_on ^= is_on;
+                pixel.is_on ^= 1;
             }
         }
         registers->V[0xF] = collision ? 1 : 0;
+        m_dirty = true;
     }
 
     void 
@@ -204,6 +207,8 @@ namespace ch8
     void 
     DisplayUnit::Present(const RegisterUnit* registers, const MemoryUnit* memory)
     {
+        if (!m_dirty) return;
+        m_dirty = false;
         SDL_RenderClear(m_renderer);
         for (const auto& pixel : m_pixels) {
             const SDL_Color color = { 
@@ -215,7 +220,7 @@ namespace ch8
             SDL_SetRenderDrawColor(m_renderer, color.r, color.g, color.b, 255);
             SDL_RenderFillRect(m_renderer, &pixel.rect);
         }
-        DrawDebugInfo(registers, memory);
+        //DrawDebugInfo(registers, memory);
         SDL_RenderPresent(m_renderer);
     }
 }

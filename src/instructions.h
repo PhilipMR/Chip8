@@ -31,12 +31,12 @@ namespace ch8
         { 7, SDL_SCANCODE_KP_7 },
         { 8, SDL_SCANCODE_KP_8 },
         { 9, SDL_SCANCODE_KP_9 },
-        { 10, SDL_SCANCODE_A },
-        { 11, SDL_SCANCODE_B },
-        { 12, SDL_SCANCODE_C },
-        { 13, SDL_SCANCODE_D },
-        { 14, SDL_SCANCODE_E },
-        { 15, SDL_SCANCODE_F }
+        { 0xA, SDL_SCANCODE_A },
+        { 0xB, SDL_SCANCODE_B },
+        { 0xC, SDL_SCANCODE_C },
+        { 0xD, SDL_SCANCODE_D },
+        { 0xE, SDL_SCANCODE_E },
+        { 0xF, SDL_SCANCODE_F }
     };
 
     static bool 
@@ -152,23 +152,25 @@ namespace ch8
                         registers->V[X] ^= registers->V[Y];
                     } break; // Sets VX to VX xor VY.
                     case 0x4: {
-                        registers->VF = ((int)registers->V[X] + (int)registers->V[Y]) > 255 ? 1 : 0;
+                        registers->VF = ((int)registers->V[Y] > (0xFF-(int)registers->V[X])) ? 1 : 0;
                         registers->V[X] += registers->V[Y];
                     } break; // Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there is not.
                     case 0x5: {
-                        registers->VF = ((int)registers->V[X] - (int)registers->V[Y]) < 0 ? 0 : 1;
+                        registers->VF = (registers->V[Y] > registers->V[X]) ? 0 : 1;
                         registers->V[X] -= registers->V[Y];
                     } break; // VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there is not.
                     case 0x6: {
-                        registers->VF = (registers->V[X] & 0b00000001) > 0 ? 1 : 0;
+                        registers->VF = registers->V[X] & 1;
                         registers->V[X] >>= 1;
                     } break; // Stores the least significant bit of VX in VF and then shifts VX to the right by 1.
                     case 0x7: {
-                        registers->VF = ((int)registers->V[Y] - (int)registers->V[X]) < 0 ? 0 : 1;
-                        registers->V[X] = registers->V[Y] - registers->V[X];
+                        registers->VF = (registers->V[X] > registers->V[Y]) ? 0 : 1;
+                        if (X != 0xF) {
+                            registers->V[X] = registers->V[Y] - registers->V[X];
+                        }
                     } break; // Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there is not.
                     case 0xE: {
-                        registers->VF = (registers->V[X] & 0b10000000) > 0 ? 1 : 0;
+                        registers->VF = registers->V[X] >> 7;
                         registers->V[X] <<= 1;
                     } break; // Stores the most significant bit of VX in VF and then shifts VX to the left by 1.
                     default: { assert(false); } break;
@@ -242,8 +244,8 @@ namespace ch8
                         memory->mem_interp_data.sound_timer = registers->V[X];
                     } break; // Sets the sound timer to VX.
                     case 0x1E: {
+                        registers->V[0xF] = (registers->I + registers->V[X]) > 0x0FFF ? 1 : 0; // Wiki says VF not affected, trapexit/chip8docs says it is...
                         registers->I += registers->V[X];
-                        registers->V[0xF] = registers->I > 0x0FFF ? 1 : 0; // Wiki says VF not affected, trapexit/chip8docs says it is...
                     } break; // Adds VX to I. VF is not affected.[c]
                     case 0x29: {
                         registers->I = memory->GetAddressOfCharSprite(registers->V[X]);

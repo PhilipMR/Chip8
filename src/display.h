@@ -17,6 +17,7 @@ namespace ch8
         TTF_Font*     m_debugFont;
         SDL_Window*   m_window;
         SDL_Renderer* m_renderer;
+        bool          m_dirty;
         struct Pixel {
             SDL_Rect rect;
             Uint8    is_on;
