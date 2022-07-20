@@ -25,7 +25,7 @@ namespace ch8
             throw std::runtime_error("Could not create the SDL window");
         }
 
-        //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
+        //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
         m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
         if (m_renderer == nullptr) {
             throw std::runtime_error("Could not create the SDL Renderer");
@@ -210,13 +210,10 @@ namespace ch8
         if (!m_dirty) return;
         m_dirty = false;
         SDL_RenderClear(m_renderer);
+        const SDL_Color bg_color{ 0, 0, 0, 255 };
+        const SDL_Color active_color{ 255, 255, 255, 255 };
         for (const auto& pixel : m_pixels) {
-            const SDL_Color color = { 
-                Uint8(pixel.is_on * 255), 
-                Uint8(pixel.is_on * 255), 
-                Uint8(pixel.is_on * 255), 
-                255 
-            };
+            const SDL_Color color = pixel.is_on ? active_color : bg_color;
             SDL_SetRenderDrawColor(m_renderer, color.r, color.g, color.b, 255);
             SDL_RenderFillRect(m_renderer, &pixel.rect);
         }

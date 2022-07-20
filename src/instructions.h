@@ -26,11 +26,11 @@ namespace ch8
         { 2, SDL_SCANCODE_KP_2 },
         { 3, SDL_SCANCODE_KP_3 },
         { 4, SDL_SCANCODE_KP_4 },
-        { 5, SDL_SCANCODE_KP_5 },
-        { 6, SDL_SCANCODE_KP_6 },
-        { 7, SDL_SCANCODE_KP_7 },
-        { 8, SDL_SCANCODE_KP_8 },
-        { 9, SDL_SCANCODE_KP_9 },
+        { 5, SDL_SCANCODE_W },
+        { 6, SDL_SCANCODE_E },
+        { 7, SDL_SCANCODE_A },
+        { 8, SDL_SCANCODE_S },
+        { 9, SDL_SCANCODE_D },
         { 0xA, SDL_SCANCODE_A },
         { 0xB, SDL_SCANCODE_B },
         { 0xC, SDL_SCANCODE_C },
@@ -42,8 +42,15 @@ namespace ch8
     static bool 
     IsKeyPressed(uint8_t key)
     {
+        static bool was_down[16];
         const Uint8* kstate = SDL_GetKeyboardState(nullptr);
-        return kstate[Chip8Keys[key].second];
+        bool is_down = kstate[Chip8Keys[key].second];
+        bool is_pressed = !was_down[Chip8Keys[key].first] && is_down;
+        was_down[Chip8Keys[key].first] = is_down;
+        if (is_pressed) {
+            int z = 0;
+        }
+        return is_down;
     }
 
     static uint8_t 
@@ -52,7 +59,8 @@ namespace ch8
         while (true) {
             const Uint8* keys = SDL_GetKeyboardState(nullptr);
             for (auto k : Chip8Keys) {
-                if (keys[k.second]) return k.first;
+                if (keys[k.second]) 
+                    return k.first;
             }
             SDL_Delay(10);
         }
@@ -192,7 +200,7 @@ namespace ch8
                 memory->mem_interp_data.PC += 2;
             } break; // Sets I to the address NNN.
             case 0xB: {
-                assert(((opcode & 0x0F00) >> 8) == 0); // Only support CHIP-8 instruction set
+                //assert(((opcode & 0x0F00) >> 8) == 0); // Only support CHIP-8 instruction set
                 uint16_t NNN = opcode & 0x0FFF;
                 memory->mem_interp_data.PC = NNN + registers->V[0];
             } break; // Jumps to the address NNN plus V0.
@@ -235,7 +243,19 @@ namespace ch8
                         registers->V[X] = memory->mem_interp_data.delay_timer;
                     } break; // Sets VX to the value of the delay timer.
                     case 0x0A: {
-                        registers->V[X] = BlockUntilKeyPress();
+                        //registers->V[X] = BlockUntilKeyPress();
+                        const Uint8* keys = SDL_GetKeyboardState(nullptr);
+                        bool set = false;
+                        static bool was_down[16];
+                        for (auto k : Chip8Keys) {
+                            bool is_down = keys[k.second];
+                            if (!was_down[k.first] && is_down) {
+                                registers->V[X] = k.first;
+                                set = true;
+                            }
+                            was_down[k.first] = is_down;
+                        }
+                        if (!set) return; // Don't increment PC! (blocking..)
                     } break; // A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event);
                     case 0x15: {
                         memory->mem_interp_data.delay_timer = registers->V[X];
@@ -244,7 +264,7 @@ namespace ch8
                         memory->mem_interp_data.sound_timer = registers->V[X];
                     } break; // Sets the sound timer to VX.
                     case 0x1E: {
-                        registers->V[0xF] = (registers->I + registers->V[X]) > 0x0FFF ? 1 : 0; // Wiki says VF not affected, trapexit/chip8docs says it is...
+                        //registers->V[0xF] = (registers->I + registers->V[X]) > 0x0FFF ? 1 : 0; // Wiki says VF not affected, trapexit/chip8docs says it is...
                         registers->I += registers->V[X];
                     } break; // Adds VX to I. VF is not affected.[c]
                     case 0x29: {

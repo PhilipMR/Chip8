@@ -62,6 +62,7 @@ namespace ch8
     {
         bool is_running = true;
         bool ready_for_next_instr = false;
+
         while (is_running)
         {
             SDL_Event event;
@@ -77,6 +78,7 @@ namespace ch8
                 }
             }
 
+
             //SDL_Delay(8);
             ready_for_next_instr = true;
             if (ready_for_next_instr) {
@@ -87,7 +89,7 @@ namespace ch8
             }
 
 
-            static Uint64 last_timer_update = 0;
+            static Uint64 last_timer_update = SDL_GetTicks64();
             Uint64 time = SDL_GetTicks64();
             if ((time-last_timer_update) >= (1000.0/60.0)) {
                 if (m_memory.mem_interp_data.delay_timer > 0) {

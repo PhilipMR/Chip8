@@ -13,8 +13,7 @@ main(int argc, char *argv[])
         SDL_Log("Could not initialize SDL_TTF");
         return -1;
     }
-
-    ch8::GameROM rom("D:\\Projects\\Chip-8\\roms\\octojam1title.ch8");
+    ch8::GameROM rom("D:\\Projects\\Chip-8\\roms\\RPS.ch8");
     ch8::Chip8Emulator emulator(&rom);
     emulator.Run();
 
